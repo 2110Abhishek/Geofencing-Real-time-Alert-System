@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS alert_notifications CASCADE;
+DROP TABLE IF EXISTS alert_configurations CASCADE;
+DROP TABLE IF EXISTS geofence_events CASCADE;
+DROP TABLE IF EXISTS vehicle_geofence_states CASCADE;
+DROP TABLE IF EXISTS vehicle_locations CASCADE;
+DROP TABLE IF EXISTS geofences CASCADE;
+DROP TABLE IF EXISTS vehicles CASCADE;
+

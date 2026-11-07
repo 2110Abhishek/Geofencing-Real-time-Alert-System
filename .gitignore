@@ -1,0 +1,23 @@
+# Dependencies
+frontend/node_modules/
+backend/vendor/
+
+# Production builds
+frontend/dist/
+backend/geotrack-server
+backend/bin/
+
+# Environment and local configurations
+.env
+.env.local
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.suo
+*.user

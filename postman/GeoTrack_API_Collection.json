@@ -1,0 +1,395 @@
+{
+  "info": {
+    "name": "GeoTrack API Collection",
+    "description": "Comprehensive test collection for GeoTrack Geofencing & Real-Time Tracking Platform (Full-Stack Assessment)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "createdGeofenceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "createdVehicleId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. System Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Response contains time_ns\", function () { var json = pm.response.json(); pm.expect(json).to.have.property('time_ns'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. POST /geofences - Create Geofence",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Downtown Delivery Zone\",\n  \"description\": \"Monitored delivery area for logistics units\",\n  \"category\": \"delivery_zone\",\n  \"coordinates\": [\n    [37.7700, -122.4200],\n    [37.7850, -122.4200],\n    [37.7850, -122.4050],\n    [37.7700, -122.4050],\n    [37.7700, -122.4200]\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/geofences",
+          "host": ["{{baseUrl}}"],
+          "path": ["geofences"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });",
+              "pm.test(\"Response contains geofence ID\", function () { pm.expect(json).to.have.property('id'); pm.collectionVariables.set(\"createdGeofenceId\", json.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. GET /geofences - Retrieve Geofences",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/geofences?category=delivery_zone",
+          "host": ["{{baseUrl}}"],
+          "path": ["geofences"],
+          "query": [
+            { "key": "category", "value": "delivery_zone" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });",
+              "pm.test(\"Response contains geofences array\", function () { pm.expect(json.geofences).to.be.an('array'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. POST /vehicles - Register Vehicle",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicle_number\": \"KA-01-AB-1234\",\n  \"driver_name\": \"John Doe\",\n  \"vehicle_type\": \"Truck\",\n  \"phone\": \"+1-555-0199\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201 or 409\", function () { pm.expect([201, 409]).to.include(pm.response.code); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });",
+              "if (pm.response.code === 201) { pm.collectionVariables.set(\"createdVehicleId\", json.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. GET /vehicles - Retrieve Vehicles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vehicles",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });",
+              "pm.test(\"Response contains vehicles array\", function () { pm.expect(json.vehicles).to.be.an('array'); });",
+              "if (json.vehicles.length > 0 && !pm.collectionVariables.get(\"createdVehicleId\")) { pm.collectionVariables.set(\"createdVehicleId\", json.vehicles[0].id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. POST /alerts/configure - Configure Alert Rule",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"geofence_id\": \"{{createdGeofenceId}}\",\n  \"vehicle_id\": \"{{createdVehicleId}}\",\n  \"event_type\": \"both\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/alerts/configure",
+          "host": ["{{baseUrl}}"],
+          "path": ["alerts", "configure"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. GET /alerts - Retrieve Alert Configurations",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/alerts",
+          "host": ["{{baseUrl}}"],
+          "path": ["alerts"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. POST /vehicles/location - Send Outside Fix (Baseline)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicle_id\": \"{{createdVehicleId}}\",\n  \"latitude\": 37.8500,\n  \"longitude\": -122.5000,\n  \"timestamp\": \"2026-11-07T10:00:00Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/location",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "location"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });",
+              "pm.test(\"No artificial transitions on initial outside fix\", function () { pm.expect(json.events_generated).to.have.lengthOf(0); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. POST /vehicles/location - Send Inside Fix (Entry Transition)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicle_id\": \"{{createdVehicleId}}\",\n  \"latitude\": 37.7780,\n  \"longitude\": -122.4120,\n  \"timestamp\": \"2026-11-07T10:05:00Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/location",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "location"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });",
+              "pm.test(\"Entry transition generated\", function () { pm.expect(json.events_generated.length).to.be.above(0); pm.expect(json.events_generated[0].event_type).to.equal('entry'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. POST /vehicles/location - Send Inside Again (Zero Duplicates)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicle_id\": \"{{createdVehicleId}}\",\n  \"latitude\": 37.7790,\n  \"longitude\": -122.4110,\n  \"timestamp\": \"2026-11-07T10:06:00Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/location",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "location"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Duplicate location generates zero new events\", function () { pm.expect(json.events_generated).to.have.lengthOf(0); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. POST /vehicles/location - Send Outside Fix (Exit Transition)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicle_id\": \"{{createdVehicleId}}\",\n  \"latitude\": 37.8600,\n  \"longitude\": -122.5100,\n  \"timestamp\": \"2026-11-07T10:10:00Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/location",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "location"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Exit transition generated\", function () { pm.expect(json.events_generated.length).to.be.above(0); pm.expect(json.events_generated[0].event_type).to.equal('exit'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. GET /vehicles/location/{id} - Current Vehicle Location",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/location/{{createdVehicleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "location", "{{createdVehicleId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. GET /violations/history - Retrieve History",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/violations/history?limit=50&offset=0",
+          "host": ["{{baseUrl}}"],
+          "path": ["violations", "history"],
+          "query": [
+            { "key": "limit", "value": "50" },
+            { "key": "offset", "value": "0" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test(\"Response contains time_ns\", function () { pm.expect(json).to.have.property('time_ns'); });",
+              "pm.test(\"History events array returned\", function () { pm.expect(json.events).to.be.an('array'); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
