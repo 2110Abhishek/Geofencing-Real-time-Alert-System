@@ -1,0 +1,13 @@
+{
+  "name": "geotrack",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/mock_server.js",
+    "server": "node scripts/mock_server.js",
+    "seed": "python scripts/seed_data.py"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
