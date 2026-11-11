@@ -28,10 +28,20 @@
   background: #334155;
 }
 
-/* Leaflet dark theme map enhancements */
+/* Leaflet dark theme map styling */
 .leaflet-container {
   background-color: #0B1220 !important;
   font-family: inherit;
+  z-index: 10 !important; /* Keep map z-index low so modals (z-99999) always stay on top */
+}
+
+/* 
+ * Apply high-contrast dark mode filter ONLY to the tile images.
+ * This preserves pure vector colors for polygons (emerald, red, amber, purple)
+ * and custom vehicle marker SVGs without inverting them!
+ */
+.leaflet-tile-pane {
+  filter: brightness(0.65) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.35) brightness(0.75);
 }
 
 .leaflet-popup-content-wrapper {
@@ -39,7 +49,7 @@
   color: #F8FAFC !important;
   border: 1px solid #1E293B;
   border-radius: 12px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
 }
 
 .leaflet-popup-tip {
@@ -52,4 +62,3 @@
   background: transparent !important;
   border: none !important;
 }
-

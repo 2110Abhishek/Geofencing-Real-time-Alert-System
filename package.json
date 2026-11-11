@@ -5,9 +5,12 @@
   "scripts": {
     "start": "node scripts/mock_server.js",
     "server": "node scripts/mock_server.js",
-    "seed": "python scripts/seed_data.py"
+    "seed": "python scripts/seed_data.py",
+    "import:real": "python scripts/import_client_data.py",
+    "dev:frontend": "cd frontend && pnpm run dev"
   },
   "dependencies": {
     "ws": "^8.18.0"
   }
 }
+

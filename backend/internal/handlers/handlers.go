@@ -99,6 +99,27 @@ func (h *APIHandler) GetGeofences(c *gin.Context) {
 	})
 }
 
+// 2b. DELETE /geofences/:id - Delete geofence
+func (h *APIHandler) DeleteGeofence(c *gin.Context) {
+	id := c.Param("id")
+	err := h.geofenceService.DeleteGeofence(id)
+	if err != nil {
+		if errors.Is(err, services.ErrGeofenceNotFound) {
+			RespondError(c, http.StatusNotFound, "NOT_FOUND", err.Error())
+			return
+		}
+		RespondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	timeNS := middleware.GetElapsedNanoseconds(c)
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "deleted",
+		"id":      id,
+		"time_ns": timeNS,
+	})
+}
+
 // 3. POST /vehicles - Register vehicle
 func (h *APIHandler) RegisterVehicle(c *gin.Context) {
 	var req models.CreateVehicleRequest
@@ -143,6 +164,63 @@ func (h *APIHandler) GetVehicles(c *gin.Context) {
 		"vehicles": vehicles,
 		"total":    len(vehicles),
 		"time_ns":  timeNS,
+	})
+}
+
+// 4b. PUT /vehicles/:id - Update vehicle
+func (h *APIHandler) UpdateVehicle(c *gin.Context) {
+	id := c.Param("id")
+	var req models.CreateVehicleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		RespondError(c, http.StatusBadRequest, "INVALID_PAYLOAD", "Invalid request body: "+err.Error())
+		return
+	}
+
+	v, err := h.vehicleService.UpdateVehicle(id, req)
+	if err != nil {
+		if errors.Is(err, services.ErrVehicleNotFound) {
+			RespondError(c, http.StatusNotFound, "NOT_FOUND", err.Error())
+			return
+		}
+		if errors.Is(err, services.ErrVehicleExists) {
+			RespondError(c, http.StatusConflict, "DUPLICATE_NUMBER", err.Error())
+			return
+		}
+		RespondError(c, http.StatusBadRequest, "UPDATE_FAILED", err.Error())
+		return
+	}
+
+	timeNS := middleware.GetElapsedNanoseconds(c)
+	c.JSON(http.StatusOK, gin.H{
+		"id":             v.ID,
+		"vehicle_number": v.VehicleNumber,
+		"driver_name":    v.DriverName,
+		"vehicle_type":   v.VehicleType,
+		"phone":          v.Phone,
+		"status":         v.Status,
+		"created_at":     v.CreatedAt,
+		"time_ns":        timeNS,
+	})
+}
+
+// 4c. DELETE /vehicles/:id - Delete vehicle
+func (h *APIHandler) DeleteVehicle(c *gin.Context) {
+	id := c.Param("id")
+	err := h.vehicleService.DeleteVehicle(id)
+	if err != nil {
+		if errors.Is(err, services.ErrVehicleNotFound) {
+			RespondError(c, http.StatusNotFound, "NOT_FOUND", err.Error())
+			return
+		}
+		RespondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	timeNS := middleware.GetElapsedNanoseconds(c)
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "deleted",
+		"id":      id,
+		"time_ns": timeNS,
 	})
 }
 

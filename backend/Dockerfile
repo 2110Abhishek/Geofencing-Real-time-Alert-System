@@ -6,10 +6,8 @@ WORKDIR /app
 # Install git and build dependencies
 RUN apk add --no-cache git
 
-COPY go.mod go.sum* ./
-RUN go mod download || true
-
 COPY . .
+RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/geotrack-server ./cmd/server
 
 # Stage 2: Minimal runtime image

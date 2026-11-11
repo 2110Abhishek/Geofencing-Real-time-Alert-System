@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getViolationHistory, getVehicles, getGeofences } from '../services/api';
-import { History, Filter, RotateCcw, ChevronLeft, ChevronRight, LogIn, LogOut, MapPin } from 'lucide-react';
+import { History, Filter, RotateCcw, ChevronLeft, ChevronRight, LogIn, LogOut, MapPin, Download } from 'lucide-react';
 import { ViolationFilters } from '../types';
+import { toast } from 'sonner';
 
 export const ViolationHistory: React.FC = () => {
   const [filters, setFilters] = useState<ViolationFilters>({
@@ -53,6 +54,34 @@ export const ViolationHistory: React.FC = () => {
   const currentPage = Math.floor(offset / limit) + 1;
   const totalPages = Math.ceil(total / limit) || 1;
 
+  const handleExportCSV = () => {
+    if (events.length === 0) {
+      toast.info('No events to export in current filter view');
+      return;
+    }
+    const headers = ['Vehicle Number', 'Driver Name', 'Geofence Name', 'Category', 'Event Type', 'Latitude', 'Longitude', 'Timestamp'];
+    const rows = events.map(e => [
+      `"${e.vehicle_number}"`,
+      `"${e.driver_name}"`,
+      `"${e.geofence_name}"`,
+      `"${e.geofence_category}"`,
+      `"${e.event_type}"`,
+      e.latitude,
+      e.longitude,
+      `"${new Date(e.event_timestamp).toISOString()}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `geotrack_violations_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Exported ${events.length} violation events to CSV!`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -63,8 +92,18 @@ export const ViolationHistory: React.FC = () => {
           </p>
         </div>
 
-        <div className="text-xs font-mono text-slate-400 bg-[#16243C] px-3 py-1.5 rounded-xl border border-[#1E293B]">
-          Total Events Recorded: <span className="text-blue-400 font-bold">{total}</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-[#16243C] hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 shadow-sm transition-all"
+            title="Export filtered records to CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+          <div className="text-xs font-mono text-slate-400 bg-[#16243C] px-3 py-1.5 rounded-xl border border-[#1E293B]">
+            Total Events: <span className="text-blue-400 font-bold">{total}</span>
+          </div>
         </div>
       </div>
 

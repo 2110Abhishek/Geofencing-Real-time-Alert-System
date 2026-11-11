@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getGeofences } from '../services/api';
-import { MapPin, Plus, Filter, Calendar, Layers, Eye } from 'lucide-react';
+import { MapPin, Plus, Filter, Calendar, Layers, Eye, UploadCloud, Trash2 } from 'lucide-react';
 import { GeofenceCreateModal } from '../components/geofences/GeofenceCreateModal';
+import { GeofenceBulkImportModal } from '../components/geofences/GeofenceBulkImportModal';
+import { GeofenceDeleteModal } from '../components/geofences/GeofenceDeleteModal';
 import { useMapStore } from '../store/mapStore';
 import { useNavigate } from 'react-router-dom';
+import { Geofence } from '../types';
 
 export const GeofenceManagement: React.FC = () => {
   const navigate = useNavigate();
   const { setCenter, setSelectedGeofenceId } = useMapStore();
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [deletingGeofence, setDeletingGeofence] = useState<Geofence | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['geofences', categoryFilter],
@@ -52,13 +57,24 @@ export const GeofenceManagement: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20 transition-all self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create Geofence</span>
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            onClick={() => setIsBulkImportOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#16243C] hover:bg-slate-700 text-purple-400 border border-purple-500/30 shadow-sm transition-all"
+            title="Import real boundaries from GeoJSON or JSON"
+          >
+            <UploadCloud className="w-4 h-4 text-purple-400" />
+            <span>Import Geofences JSON</span>
+          </button>
+
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Geofence</span>
+          </button>
+        </div>
       </div>
 
       {/* Category Filter Pills */}
@@ -137,13 +153,22 @@ export const GeofenceManagement: React.FC = () => {
                     <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
                       {new Date(g.created_at).toLocaleDateString()} {new Date(g.created_at).toLocaleTimeString()}
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                       <button
                         onClick={() => handleViewOnMap(g)}
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#16243C] hover:bg-slate-700 text-blue-400 text-xs font-semibold border border-[#1E293B] transition-all"
+                        title="View on Map"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>View Map</span>
+                      </button>
+                      <button
+                        onClick={() => setDeletingGeofence(g)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold border border-red-500/20 hover:border-red-500/40 transition-all"
+                        title="Delete Geofence"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
                       </button>
                     </td>
                   </tr>
@@ -156,6 +181,17 @@ export const GeofenceManagement: React.FC = () => {
 
       {isCreateModalOpen && (
         <GeofenceCreateModal onClose={() => setIsCreateModalOpen(false)} />
+      )}
+
+      {isBulkImportOpen && (
+        <GeofenceBulkImportModal onClose={() => setIsBulkImportOpen(false)} />
+      )}
+
+      {deletingGeofence && (
+        <GeofenceDeleteModal
+          geofence={deletingGeofence}
+          onClose={() => setDeletingGeofence(null)}
+        />
       )}
     </div>
   );

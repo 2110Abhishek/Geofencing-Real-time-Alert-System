@@ -1,0 +1,39 @@
+[
+  {
+    "name": "Mumbai Logistics Terminal A",
+    "description": "Primary cargo intake and dispatch facility",
+    "category": "delivery_zone",
+    "coordinates": [
+      [19.0760, 72.8777],
+      [19.0860, 72.8777],
+      [19.0860, 72.8877],
+      [19.0760, 72.8877],
+      [19.0760, 72.8777]
+    ]
+  },
+  {
+    "name": "Port Security Restricted Area",
+    "description": "Restricted maritime customs perimeter - strict surveillance",
+    "category": "restricted_zone",
+    "coordinates": [
+      [18.9500, 72.8500],
+      [18.9650, 72.8500],
+      [18.9650, 72.8650],
+      [18.9500, 72.8650],
+      [18.9500, 72.8500]
+    ]
+  },
+  {
+    "name": "Sea Link Toll Corridor",
+    "description": "Electronic toll collection and rate compliance plaza",
+    "category": "toll_zone",
+    "coordinates": [
+      [19.0300, 72.8150],
+      [19.0380, 72.8150],
+      [19.0380, 72.8250],
+      [19.0300, 72.8250],
+      [19.0300, 72.8150]
+    ]
+  }
+]
+

@@ -243,6 +243,18 @@ const server = http.createServer((req, res) => {
     return sendJSON(200, { geofences: items, total: items.length });
   }
 
+  // 2b. DELETE /geofences/:id
+  const geofenceIdMatch = pathname.match(/^\/geofences\/([a-zA-Z0-9_-]+)$/);
+  if (geofenceIdMatch && method === 'DELETE') {
+    const id = geofenceIdMatch[1];
+    const idx = db.geofences.findIndex(g => g.id === id);
+    if (idx === -1) {
+      return sendJSON(404, { error: 'Geofence not found', code: 'NOT_FOUND' });
+    }
+    const removed = db.geofences.splice(idx, 1)[0];
+    return sendJSON(200, { status: 'deleted', id: id, name: removed.name });
+  }
+
   // 3. POST /vehicles
   if (pathname === '/vehicles' && method === 'POST') {
     parseBody(body => {
@@ -273,6 +285,42 @@ const server = http.createServer((req, res) => {
   // 4. GET /vehicles
   if (pathname === '/vehicles' && method === 'GET') {
     return sendJSON(200, { vehicles: db.vehicles, total: db.vehicles.length });
+  }
+
+  // 4b. PUT /vehicles/:id (Update vehicle details)
+  const vehIdMatch = pathname.match(/^\/vehicles\/([a-zA-Z0-9_-]+)$/);
+  if (vehIdMatch && method === 'PUT') {
+    const id = vehIdMatch[1];
+    parseBody(body => {
+      const idx = db.vehicles.findIndex(v => v.id === id);
+      if (idx === -1) {
+        return sendJSON(404, { error: 'Vehicle not found', code: 'NOT_FOUND' });
+      }
+      if (body.vehicle_number) {
+        const num = body.vehicle_number.trim().toUpperCase();
+        if (db.vehicles.some((v, i) => i !== idx && v.vehicle_number === num)) {
+          return sendJSON(409, { error: 'Vehicle number already registered', code: 'DUPLICATE_NUMBER' });
+        }
+        db.vehicles[idx].vehicle_number = num;
+      }
+      if (body.driver_name !== undefined) db.vehicles[idx].driver_name = body.driver_name.trim();
+      if (body.vehicle_type !== undefined) db.vehicles[idx].vehicle_type = body.vehicle_type.trim();
+      if (body.phone !== undefined) db.vehicles[idx].phone = body.phone.trim();
+      if (body.status !== undefined) db.vehicles[idx].status = body.status.trim();
+      return sendJSON(200, db.vehicles[idx]);
+    });
+    return;
+  }
+
+  // 4c. DELETE /vehicles/:id (Delete vehicle)
+  if (vehIdMatch && method === 'DELETE') {
+    const id = vehIdMatch[1];
+    const idx = db.vehicles.findIndex(v => v.id === id);
+    if (idx === -1) {
+      return sendJSON(404, { error: 'Vehicle not found', code: 'NOT_FOUND' });
+    }
+    const removed = db.vehicles.splice(idx, 1)[0];
+    return sendJSON(200, { status: 'deleted', id: id, vehicle_number: removed.vehicle_number });
   }
 
   // 5. POST /vehicles/location

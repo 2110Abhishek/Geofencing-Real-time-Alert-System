@@ -12,9 +12,10 @@ Verifies the 5 Scenarios from Section 15.2 of the PRD:
 import json
 import urllib.request
 import urllib.error
+import os
 import time
 
-BASE_URL = "http://localhost:8080"
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:8080")
 
 def request(endpoint, method="GET", payload=None):
     url = f"{BASE_URL}{endpoint}"
@@ -190,9 +191,39 @@ def run_tests():
     assert len(res["events_generated"]) == 0, "Scenario 5B FAILED: Stale GPS update must not trigger state transition!"
     print(f"[✓] SCENARIO 5B PASSED: Out-of-order GPS update safely handled without state regression")
 
+    # -------------------------------------------------------------
+    # SCENARIO 6: Vehicle Edit and Delete Operations
+    # -------------------------------------------------------------
+    # A. Edit vehicle
+    edit_payload = {
+        "driver_name": "Updated Driver Name",
+        "vehicle_type": "Heavy Truck",
+        "phone": "+1-555-9999"
+    }
+    code, res = request(f"/vehicles/{v_id}", "PUT", edit_payload)
+    assert code == 200, f"Expected 200 for vehicle edit, got {code}"
+    assert res["driver_name"] == "Updated Driver Name", "Vehicle edit driver_name mismatch"
+    assert "time_ns" in res, "Vehicle edit response must include time_ns"
+    print(f"[✓] SCENARIO 6A PASSED: Vehicle successfully edited (time_ns: {res['time_ns']} ns)")
+
+    # B. Delete vehicle
+    code, res = request(f"/vehicles/{v_id}", "DELETE")
+    assert code == 200, f"Expected 200 for vehicle deletion, got {code}"
+    assert res.get("status") == "deleted", "Vehicle deletion status mismatch"
+    assert "time_ns" in res, "Vehicle deletion response must include time_ns"
+    print(f"[✓] SCENARIO 6B PASSED: Vehicle successfully deleted (time_ns: {res['time_ns']} ns)")
+
+    # C. Delete geofence
+    code, res = request(f"/geofences/{g1_id}", "DELETE")
+    assert code == 200, f"Expected 200 for geofence deletion, got {code}"
+    assert res.get("status") == "deleted", "Geofence deletion status mismatch"
+    assert "time_ns" in res, "Geofence deletion response must include time_ns"
+    print(f"[✓] SCENARIO 6C PASSED: Geofence successfully deleted (time_ns: {res['time_ns']} ns)")
+
     print("\n" + "=" * 70)
-    print(" ALL 5 INTEGRATION SCENARIOS PASSED WITH 100% SUCCESS!")
+    print(" ALL 6 INTEGRATION SCENARIOS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 if __name__ == "__main__":
     run_tests()
+

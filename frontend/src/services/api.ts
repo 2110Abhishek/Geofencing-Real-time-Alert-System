@@ -14,7 +14,16 @@ import {
   ViolationFilters,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return 'http://localhost:8080';
+  if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
+    return `https://${envUrl}`;
+  }
+  return envUrl.replace(/\/$/, '');
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -35,6 +44,11 @@ export const createGeofence = async (data: CreateGeofenceDTO): Promise<Geofence 
   return response.data;
 };
 
+export const deleteGeofence = async (id: string): Promise<{ status: string; id: string; time_ns: string }> => {
+  const response = await apiClient.delete(`/geofences/${id}`);
+  return response.data;
+};
+
 // 2. Vehicles
 export const getVehicles = async (): Promise<{ vehicles: VehicleWithLocation[]; total: number; time_ns: string }> => {
   const response = await apiClient.get('/vehicles');
@@ -43,6 +57,19 @@ export const getVehicles = async (): Promise<{ vehicles: VehicleWithLocation[]; 
 
 export const registerVehicle = async (data: CreateVehicleDTO): Promise<Vehicle & { time_ns: string }> => {
   const response = await apiClient.post('/vehicles', data);
+  return response.data;
+};
+
+export const updateVehicle = async (
+  id: string,
+  data: Partial<CreateVehicleDTO> & { status?: string }
+): Promise<Vehicle & { time_ns: string }> => {
+  const response = await apiClient.put(`/vehicles/${id}`, data);
+  return response.data;
+};
+
+export const deleteVehicle = async (id: string): Promise<{ status: string; id: string; time_ns: string }> => {
+  const response = await apiClient.delete(`/vehicles/${id}`);
   return response.data;
 };
 

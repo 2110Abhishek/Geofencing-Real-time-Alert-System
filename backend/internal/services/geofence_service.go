@@ -131,6 +131,18 @@ func (s *GeofenceService) GetGeofenceByID(id string) (*models.Geofence, error) {
 	return &g, nil
 }
 
+func (s *GeofenceService) DeleteGeofence(id string) error {
+	res, err := s.db.Exec("DELETE FROM geofences WHERE id = $1", id)
+	if err != nil {
+		return fmt.Errorf("failed deleting geofence: %w", err)
+	}
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrGeofenceNotFound
+	}
+	return nil
+}
+
 // parseGeoJSONPolygon parses GeoJSON Polygon {"type":"Polygon","coordinates":[[[lng, lat], ...]]}
 // and converts into [ [lat, lng], ... ] for the API contract.
 func parseGeoJSONPolygon(geoJSON string) ([][]float64, error) {

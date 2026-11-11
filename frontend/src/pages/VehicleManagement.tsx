@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getVehicles } from '../services/api';
-import { Truck, Plus, Phone, Navigation, ShieldCheck, Clock, Activity } from 'lucide-react';
+import { Truck, Plus, Phone, Navigation, ShieldCheck, Clock, Activity, UploadCloud, Edit3, Trash2 } from 'lucide-react';
 import { VehicleRegisterModal } from '../components/vehicles/VehicleRegisterModal';
 import { VehicleTelemetryModal } from '../components/vehicles/VehicleTelemetryModal';
+import { VehicleBulkImportModal } from '../components/vehicles/VehicleBulkImportModal';
+import { VehicleEditModal } from '../components/vehicles/VehicleEditModal';
+import { VehicleDeleteModal } from '../components/vehicles/VehicleDeleteModal';
 import { useNavigate } from 'react-router-dom';
 import { useMapStore } from '../store/mapStore';
+import { VehicleWithLocation } from '../types';
 
 export const VehicleManagement: React.FC = () => {
   const navigate = useNavigate();
   const { setCenter, setSelectedVehicleId } = useMapStore();
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [telemetryVehicleId, setTelemetryVehicleId] = useState<string | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<VehicleWithLocation | null>(null);
+  const [deletingVehicle, setDeletingVehicle] = useState<VehicleWithLocation | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['vehicles'],
@@ -38,13 +45,24 @@ export const VehicleManagement: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsRegisterOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Register Vehicle</span>
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            onClick={() => setIsBulkImportOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#16243C] hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 shadow-sm transition-all"
+            title="Import real client vehicles from CSV file"
+          >
+            <UploadCloud className="w-4 h-4 text-cyan-400" />
+            <span>Import Real Fleet CSV</span>
+          </button>
+
+          <button
+            onClick={() => setIsRegisterOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Register Vehicle</span>
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl bg-[#0E1726] border border-[#1E293B] overflow-hidden shadow-sm">
@@ -134,7 +152,7 @@ export const VehicleManagement: React.FC = () => {
                           <span className="text-slate-500 text-[11px]">Outside zones</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-2">
+                      <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
                           onClick={() => setTelemetryVehicleId(v.id)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#16243C] hover:bg-slate-700 text-cyan-400 text-xs font-semibold border border-[#1E293B] transition-all"
@@ -146,9 +164,26 @@ export const VehicleManagement: React.FC = () => {
                         <button
                           onClick={() => handleTrackVehicle(v)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 text-xs font-semibold border border-blue-500/30 transition-all"
+                          title="Track vehicle on map"
                         >
                           <Navigation className="w-3.5 h-3.5" />
                           <span>Track</span>
+                        </button>
+                        <button
+                          onClick={() => setEditingVehicle(v)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#16243C] hover:bg-amber-500/20 text-amber-400 text-xs font-semibold border border-[#1E293B] hover:border-amber-500/30 transition-all"
+                          title="Edit vehicle details"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => setDeletingVehicle(v)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 text-xs font-semibold border border-red-500/20 hover:border-red-500/40 transition-all"
+                          title="Delete vehicle"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
                         </button>
                       </td>
                     </tr>
@@ -164,10 +199,28 @@ export const VehicleManagement: React.FC = () => {
         <VehicleRegisterModal onClose={() => setIsRegisterOpen(false)} />
       )}
 
+      {isBulkImportOpen && (
+        <VehicleBulkImportModal onClose={() => setIsBulkImportOpen(false)} />
+      )}
+
       {telemetryVehicleId && (
         <VehicleTelemetryModal
           defaultVehicleId={telemetryVehicleId}
           onClose={() => setTelemetryVehicleId(null)}
+        />
+      )}
+
+      {editingVehicle && (
+        <VehicleEditModal
+          vehicle={editingVehicle}
+          onClose={() => setEditingVehicle(null)}
+        />
+      )}
+
+      {deletingVehicle && (
+        <VehicleDeleteModal
+          vehicle={deletingVehicle}
+          onClose={() => setDeletingVehicle(null)}
         />
       )}
     </div>

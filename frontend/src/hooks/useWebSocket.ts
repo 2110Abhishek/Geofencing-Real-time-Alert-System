@@ -10,7 +10,19 @@ export const useWebSocket = () => {
   const { addAlert, setConnectionStatus } = useAlertStore();
 
   const connect = () => {
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws/alerts';
+    let wsUrl = import.meta.env.VITE_WS_URL;
+    if (!wsUrl) {
+      let apiUrl = import.meta.env.VITE_API_URL;
+      if (apiUrl) {
+        if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+          apiUrl = `https://${apiUrl}`;
+        }
+        const clean = apiUrl.replace(/^http/, 'ws').replace(/\/$/, '');
+        wsUrl = `${clean}/ws/alerts`;
+      } else {
+        wsUrl = 'ws://localhost:8080/ws/alerts';
+      }
+    }
 
     try {
       setConnectionStatus('connecting');

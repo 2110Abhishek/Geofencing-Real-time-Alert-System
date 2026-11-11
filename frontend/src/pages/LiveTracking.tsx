@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getVehicles, getGeofences } from '../services/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getVehicles, getGeofences, updateVehicleLocation } from '../services/api';
 import { FleetMap } from '../components/maps/FleetMap';
 import { useMapStore } from '../store/mapStore';
-import { Truck, Navigation, Search, Activity, ShieldCheck, Clock } from 'lucide-react';
+import { Truck, Navigation, Search, Activity, ShieldCheck, Clock, LocateFixed } from 'lucide-react';
 import { VehicleWithLocation } from '../types';
 import { VehicleTelemetryModal } from '../components/vehicles/VehicleTelemetryModal';
+import { toast } from 'sonner';
 
 export const LiveTracking: React.FC = () => {
+  const queryClient = useQueryClient();
   const { setCenter, selectedVehicleId, setSelectedVehicleId } = useMapStore();
   const [search, setSearch] = useState('');
   const [telemetryVehicleId, setTelemetryVehicleId] = useState<string | null>(null);
@@ -37,6 +39,50 @@ export const LiveTracking: React.FC = () => {
     if (v.last_location) {
       setCenter([v.last_location.latitude, v.last_location.longitude], 15);
     }
+  };
+
+  const handleQuickSetGPS = (v: VehicleWithLocation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!navigator.geolocation) {
+      toast.error('Browser does not support HTML5 Geolocation');
+      return;
+    }
+
+    toast.info(`Acquiring GPS for ${v.vehicle_number}...`);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = Number(pos.coords.latitude.toFixed(6));
+        const lng = Number(pos.coords.longitude.toFixed(6));
+
+        try {
+          const res = await updateVehicleLocation({
+            vehicle_id: v.id,
+            latitude: lat,
+            longitude: lng,
+            timestamp: new Date().toISOString(),
+          });
+
+          setSelectedVehicleId(v.id);
+          setCenter([lat, lng], 16);
+          queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+
+          toast.success(
+            `🎯 Moved ${v.vehicle_number} to your real location!`,
+            {
+              description: `Coordinates: [${lat}, ${lng}] (Accuracy: ±${Math.round(pos.coords.accuracy)}m)`,
+            }
+          );
+        } catch (err: any) {
+          toast.error('Failed to update vehicle location', {
+            description: err.response?.data?.error || err.message,
+          });
+        }
+      },
+      (err) => {
+        toast.error(`GPS Error: ${err.message}. Please check browser location permissions.`);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   return (
@@ -125,6 +171,30 @@ export const LiveTracking: React.FC = () => {
                         )}
                       </div>
                     )}
+
+                    {/* Quick Location Action Buttons */}
+                    <div className="mt-2.5 pt-2 border-t border-[#1E293B]/60 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => handleQuickSetGPS(v, e)}
+                        className="flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-[11px] font-semibold border border-emerald-500/30 transition-all shadow-sm"
+                        title="Acquire device GPS and place this vehicle at your exact location"
+                      >
+                        <LocateFixed className="w-3 h-3" />
+                        <span>Set My GPS</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTelemetryVehicleId(v.id);
+                        }}
+                        className="py-1 px-2 rounded-lg bg-[#16243C] hover:bg-slate-700 text-cyan-400 text-[11px] font-semibold border border-[#1E293B] transition-all"
+                        title="Manually ping or simulate coordinates"
+                      >
+                        Ping
+                      </button>
+                    </div>
                   </div>
                 );
               })

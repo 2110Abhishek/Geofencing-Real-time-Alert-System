@@ -79,8 +79,11 @@ func main() {
 	// Required 9 Endpoints
 	router.POST("/geofences", handler.CreateGeofence)
 	router.GET("/geofences", handler.GetGeofences)
+	router.DELETE("/geofences/:id", handler.DeleteGeofence)
 	router.POST("/vehicles", handler.RegisterVehicle)
 	router.GET("/vehicles", handler.GetVehicles)
+	router.PUT("/vehicles/:id", handler.UpdateVehicle)
+	router.DELETE("/vehicles/:id", handler.DeleteVehicle)
 	router.POST("/vehicles/location", handler.UpdateVehicleLocation)
 	router.GET("/vehicles/location/:vehicle_id", handler.GetCurrentVehicleLocation)
 	router.POST("/alerts/configure", handler.ConfigureAlert)

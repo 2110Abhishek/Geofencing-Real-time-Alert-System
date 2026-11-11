@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"geotrack/backend/internal/models"
 )
@@ -118,6 +117,49 @@ func (s *VehicleService) GetVehicleByID(id string) (*models.Vehicle, error) {
 		return nil, fmt.Errorf("failed getting vehicle: %w", err)
 	}
 	return &v, nil
+}
+
+func (s *VehicleService) UpdateVehicle(id string, req models.CreateVehicleRequest) (*models.Vehicle, error) {
+	normNum := strings.ToUpper(strings.TrimSpace(req.VehicleNumber))
+	if normNum != "" {
+		var count int
+		err := s.db.QueryRow("SELECT COUNT(*) FROM vehicles WHERE vehicle_number = $1 AND id != $2", normNum, id).Scan(&count)
+		if err == nil && count > 0 {
+			return nil, ErrVehicleExists
+		}
+	}
+
+	query := `
+		UPDATE vehicles
+		SET vehicle_number = COALESCE(NULLIF($1, ''), vehicle_number),
+		    driver_name = COALESCE(NULLIF($2, ''), driver_name),
+		    vehicle_type = COALESCE(NULLIF($3, ''), vehicle_type),
+		    phone = COALESCE(NULLIF($4, ''), phone)
+		WHERE id = $5
+		RETURNING id, vehicle_number, driver_name, vehicle_type, phone, status, created_at
+	`
+	var v models.Vehicle
+	err := s.db.QueryRow(query, normNum, strings.TrimSpace(req.DriverName), strings.TrimSpace(req.VehicleType), strings.TrimSpace(req.Phone), id).
+		Scan(&v.ID, &v.VehicleNumber, &v.DriverName, &v.VehicleType, &v.Phone, &v.Status, &v.CreatedAt)
+	if err == sql.ErrNoRows {
+		return nil, ErrVehicleNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed updating vehicle: %w", err)
+	}
+	return &v, nil
+}
+
+func (s *VehicleService) DeleteVehicle(id string) error {
+	res, err := s.db.Exec("DELETE FROM vehicles WHERE id = $1", id)
+	if err != nil {
+		return fmt.Errorf("failed deleting vehicle: %w", err)
+	}
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrVehicleNotFound
+	}
+	return nil
 }
 
 func (s *VehicleService) getCurrentGeofenceIDs(vehicleID string) []string {
