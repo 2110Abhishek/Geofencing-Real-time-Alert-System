@@ -26,8 +26,6 @@ services:
     runtime: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
-    region: oregon
-    plan: free
     envVars:
       - key: VITE_API_URL
         fromService:
@@ -43,8 +41,7 @@ databases:
   # 3. PostgreSQL 15 Database (PostGIS auto-enabled by migration)
   - name: geotrack-db
     databaseName: geotrack
-    user: postgres
+    user: geotrack_admin
     region: oregon
     plan: free
     postgresMajorVersion: 15
-
